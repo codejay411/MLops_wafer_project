@@ -10,6 +10,7 @@ data_source:
 data_preparation:
   training_db: Training.db
   training_db_dir: Training_Database
+  training_log: data/Training_Logs
   schema_training: config/schema_training.json
   good_validated_raw_dir: data/Training_Raw_files_validated/Good_raw
   bad_validated_raw_dir: data/Training_Raw_files_validated/Bad_raw

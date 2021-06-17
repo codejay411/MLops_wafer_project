@@ -3,6 +3,9 @@ import argparse
 import yaml
 import logging
 from training_Validation_Insertion import train_validation
+from trainingModel import trainModel
+from prediction_Validation_Insertion import pred_validation
+from predictFromModel import prediction
 # # from read_params import read_params
 
 def read_params(config_path):
@@ -13,11 +16,26 @@ def read_params(config_path):
 def main(config_path, datasource):
     config = read_params(config_path)
     # print(config)
-    path = config["data_source"]["batch_files"]
+    path = config["data_source"]["bad_files"]
     # print(path)
-    train_valObj = train_validation(path) #object initialization
+    # train_valObj = train_validation(path) #object initialization
 
-    train_valObj.train_validation()#calling the training_validation function
+    # train_valObj.train_validation()#calling the training_validation function
+
+    # trainModelObj = trainModel() #object initialization
+    
+    # trainModelObj.trainingModel() #training the model for the files in the table
+
+
+    # pred_val = pred_validation(path) #object initialization
+
+    # pred_val.prediction_validation() #calling the prediction_validation function
+
+    pred = prediction(path) #object initialization
+
+    path,json_predictions = pred.predictionFromModel()
+    print(path)
+    print(json_predictions)
 
 if __name__=="__main__":
     args = argparse.ArgumentParser()

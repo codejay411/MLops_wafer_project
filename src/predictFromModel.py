@@ -29,6 +29,7 @@ class prediction:
             self.log_writer.log(self.file_object,'Start of Prediction')
             data_getter=data_loader_prediction.Data_Getter_Pred(self.file_object,self.log_writer)
             data=data_getter.get_data()
+            # data.head()
 
             #code change
             # wafer_names=data['Wafer']
@@ -44,10 +45,13 @@ class prediction:
             #data=data.to_numpy()
             file_loader=file_methods.File_Operation(self.file_object,self.log_writer)
             kmeans=file_loader.load_model('KMeans')
+            # print(data)
 
             ##Code changed
             #pred_data = data.drop(['Wafer'],axis=1)
             clusters=kmeans.predict(data.drop(['Wafer'],axis=1))#drops the first column for cluster prediction
+            # print(clusters)
+            # print("clustrer")
             data['clusters']=clusters
             clusters=data['clusters'].unique()
             for i in clusters:
@@ -58,6 +62,8 @@ class prediction:
                 model_name = file_loader.find_correct_model_file(i)
                 model = file_loader.load_model(model_name)
                 result=list(model.predict(cluster_data))
+
+                
                 result = pandas.DataFrame(list(zip(wafer_names,result)),columns=['Wafer','Prediction'])
                 path=config["pred_data_preparation"]["Prediction_Output_File"]
                 result.to_csv(path,header=True,mode='a+') #appends result to prediction file

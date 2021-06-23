@@ -3,6 +3,7 @@ from sklearn.model_selection import GridSearchCV
 from xgboost import XGBClassifier
 from sklearn.metrics  import roc_auc_score,accuracy_score
 import os
+import json
 import yaml
 def read_params(config_path):
     with open(config_path) as yaml_file:
@@ -26,6 +27,8 @@ class Model_Finder:
         self.logger_object = logger_object
         self.clf = RandomForestClassifier()
         self.xgb = XGBClassifier(objective='binary:logistic')
+        self.json_random_forest={}
+        self.json_xgboost={}
 
     def get_best_params_for_random_forest(self,train_x,train_y):
         """
@@ -48,10 +51,10 @@ class Model_Finder:
         cv = config["training"]["random_forest"]["cv"]
         verbose = config["training"]["random_forest"]["verbose"]
 
-        print(n_estimator)
-        print(criterion)
-        print(max_depth)
-        print(max_features)
+        # print(n_estimator)
+        # print(criterion)
+        # print(max_depth)
+        # print(max_features)
 
 
         try:
@@ -76,6 +79,21 @@ class Model_Finder:
                                               max_depth=self.max_depth, max_features=self.max_features)
             # training the mew model
             self.clf.fit(train_x, train_y)
+
+            # predicted = self.clf.predict()
+            # ------------------------------------
+            # params_file = config["reports"]["params"]
+            params = {
+                "model": "RandomForest",
+                "n_estimators": self.n_estimators,
+                "max_features": self.max_features,
+                "max_depth": self.max_depth,
+                "criterion": self.criterion,
+            }
+            self.json_random_forest.update(params)
+            
+            # -------------------------------------
+
             self.logger_object.log(self.file_object,
                                    'Random Forest best params: '+str(self.grid.best_params_)+'. Exited the get_best_params_for_random_forest method of the Model_Finder class')
 
@@ -138,6 +156,19 @@ class Model_Finder:
             self.xgb = XGBClassifier(learning_rate=self.learning_rate, max_depth=self.max_depth, n_estimators=self.n_estimators)
             # training the mew model
             self.xgb.fit(train_x, train_y)
+            
+            # ------------------------------------
+            # params_file = config["reports"]["params"]
+            params = {
+                "model": "XGBoost",
+                "learning_rate": self.learning_rate,
+                "max_depth": self.max_depth,
+                "n_estimators": self.n_estimators,
+            }
+            self.json_xgboost.update(params)
+            
+            # -------------------------------------
+
             # self.logger_object.log(self.file_object,
             #                        'XGBoost best params: ' + str(
             #                            self.grid.best_params_) + '. Exited the get_best_params_for_xgboost method of the Model_Finder class')
@@ -169,6 +200,7 @@ class Model_Finder:
         try:
             self.xgboost= self.get_best_params_for_xgboost(train_x,train_y)
             self.prediction_xgboost = self.xgboost.predict(test_x) # Predictions using the XGBoost Model
+            self.xgboost_score=0
 
             if len(test_y.unique()) == 1: #if there is only one label in y, then roc_auc_score returns error. We will use accuracy in that case
                 self.xgboost_score = accuracy_score(test_y, self.prediction_xgboost)
@@ -180,6 +212,7 @@ class Model_Finder:
             # create best model for Random Forest
             self.random_forest=self.get_best_params_for_random_forest(train_x,train_y)
             self.prediction_random_forest=self.random_forest.predict(test_x) # prediction using the Random Forest Algorithm
+            self.random_forest_score=0
 
             if len(test_y.unique()) == 1:#if there is only one label in y, then roc_auc_score returns error. We will use accuracy in that case
                 self.random_forest_score = accuracy_score(test_y,self.prediction_random_forest)
@@ -188,10 +221,45 @@ class Model_Finder:
                 self.random_forest_score = roc_auc_score(test_y, self.prediction_random_forest) # AUC for Random Forest
                 self.logger_object.log(self.file_object, 'AUC for RF:' + str(self.random_forest_score))
 
+
             #comparing the two models
             if(self.random_forest_score <  self.xgboost_score):
+                # ------------------
+                scores_file = config["reports"]["scores"]
+                params_file = config["reports"]["params"]
+
+                scores = {
+                    "model": "XGBoost",
+                    "scores": self.xgboost_score
+                    }    
+                # score = {key,scores}                
+                with open(scores_file, "w") as f:
+                    json.dump(scores, f)
+                 
+                # param = {key,self.json_random_forest}
+                with open(params_file, "w") as f:
+                    json.dump(self.json_random_forest, f)
+                # k=k+1/
+   
+                # -----------------
                 return 'XGBoost',self.xgboost
             else:
+                # ------------------
+                scores_file = config["reports"]["scores"]
+                params_file = config["reports"]["params"]
+                scores = {
+                    "model": "RandomForest",
+                    "scores": self.random_forest_score
+                    }
+                # score = {key,scores}                    
+                with open(scores_file, "w") as f:
+                    json.dump(scores, f)
+                 
+                # param = {key,self.json_random_forest}
+                with open(params_file, "w") as f:
+                    json.dump(self.json_random_forest, f)
+                
+                # -----------------
                 return 'RandomForest',self.random_forest
 
         except Exception as e:

@@ -123,11 +123,11 @@ class Preprocessor:
         neighbour = config["data_preprocessing"]["KNNImputer"]["n_neighbors"]
         weight = config["data_preprocessing"]["KNNImputer"]["weights"]
         missing = config["data_preprocessing"]["KNNImputer"]["missing_values"]
-        print(neighbour)
-        print(weight)
-        print(type(weight))
-        print(missing)
-        print(np.nan)
+        # print(neighbour)
+        # print(weight)
+        # print(type(weight))
+        # print(missing)
+        # print(np.nan)
         try:
             imputer=KNNImputer(n_neighbors=neighbour, weights=weight, missing_values=np.nan)
             self.new_array=imputer.fit_transform(self.data) # impute the missing values
